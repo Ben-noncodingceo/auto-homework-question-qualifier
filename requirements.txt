@@ -1,20 +1,11 @@
-# PDF Processing
+# Web Framework
+Flask==3.0.0
+
+# PDF Processing (lightweight)
 PyPDF2==3.0.1
-pdfplumber==0.11.0
-pdf2image==1.17.0
 
 # DOCX Processing
 python-docx==1.1.0
 
-# LaTeX Processing
-pylatexenc==2.10
-
-# API Clients
-openai==1.12.0
+# API Client
 requests==2.31.0
-
-# Image Processing (for LaTeX preview)
-Pillow==10.2.0
-
-# Utilities
-python-dotenv==1.0.1

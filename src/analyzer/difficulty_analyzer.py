@@ -1,38 +1,30 @@
 """Difficulty analyzer using AI models"""
-import os
 import json
+import requests
 from typing import Dict, List
-from openai import OpenAI
 
 
 class DifficultyAnalyzer:
     """Analyze question difficulty using AI models (DeepSeek or ChatGPT)"""
 
-    def __init__(self, api_provider: str = None, api_key: str = None):
+    def __init__(self, api_provider: str = 'deepseek', api_key: str = None):
         """
         Initialize the analyzer
 
         Args:
-            api_provider: 'openai' or 'deepseek' (defaults to env var API_PROVIDER)
-            api_key: API key (defaults to env var based on provider)
+            api_provider: 'openai' or 'deepseek'
+            api_key: API key
         """
-        self.api_provider = api_provider or os.getenv('API_PROVIDER', 'deepseek')
+        self.api_provider = api_provider
+        self.api_key = api_key
 
-        # Initialize OpenAI client (works for both OpenAI and DeepSeek)
+        # Set API endpoint and model based on provider
         if self.api_provider == 'deepseek':
-            self.api_key = api_key or os.getenv('DEEPSEEK_API_KEY')
-            self.api_base = os.getenv('DEEPSEEK_API_BASE', 'https://api.deepseek.com/v1')
-            self.model = os.getenv('DEEPSEEK_MODEL', 'deepseek-chat')
-
-            self.client = OpenAI(
-                api_key=self.api_key,
-                base_url=self.api_base
-            )
+            self.api_base = 'https://api.deepseek.com/v1/chat/completions'
+            self.model = 'deepseek-chat'
         else:  # openai
-            self.api_key = api_key or os.getenv('OPENAI_API_KEY')
-            self.model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
-
-            self.client = OpenAI(api_key=self.api_key)
+            self.api_base = 'https://api.openai.com/v1/chat/completions'
+            self.model = 'gpt-3.5-turbo'
 
     def analyze_question(self, question_content: str) -> Dict:
         """
@@ -47,26 +39,35 @@ class DifficultyAnalyzer:
         prompt = self._create_analysis_prompt(question_content)
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {self.api_key}'
+            }
+
+            data = {
+                'model': self.model,
+                'messages': [
                     {
-                        "role": "system",
-                        "content": "你是一个专业的教育评估专家，擅长分析题目难度和知识点。请以JSON格式返回结果。"
+                        'role': 'system',
+                        'content': '你是一个专业的教育评估专家，擅长分析题目难度和知识点。请以JSON格式返回结果。'
                     },
                     {
-                        "role": "user",
-                        "content": prompt
+                        'role': 'user',
+                        'content': prompt
                     }
                 ],
-                temperature=0.3,
-                max_tokens=500
-            )
+                'temperature': 0.3,
+                'max_tokens': 500
+            }
 
-            result = response.choices[0].message.content.strip()
+            response = requests.post(self.api_base, headers=headers, json=data, timeout=30)
+            response.raise_for_status()
+
+            result = response.json()
+            content = result['choices'][0]['message']['content'].strip()
 
             # Parse JSON response
-            analysis = self._parse_response(result)
+            analysis = self._parse_response(content)
 
             return analysis
 

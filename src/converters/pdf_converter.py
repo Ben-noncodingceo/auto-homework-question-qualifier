@@ -1,6 +1,6 @@
 """PDF to LaTeX converter"""
-import pdfplumber
-from typing import Optional
+import PyPDF2
+import re
 
 
 class PDFConverter:
@@ -32,8 +32,10 @@ class PDFConverter:
         ]
 
         try:
-            with pdfplumber.open(pdf_path) as pdf:
-                for page_num, page in enumerate(pdf.pages, 1):
+            with open(pdf_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+
+                for page_num, page in enumerate(pdf_reader.pages, 1):
                     # Extract text from page
                     text = page.extract_text()
 
@@ -90,8 +92,6 @@ class PDFConverter:
 
     def _is_question_header(self, line: str) -> bool:
         """Detect if a line is a question header"""
-        import re
-
         # Patterns for question headers
         patterns = [
             r'^\d+[.、]',  # 1. or 1、
