@@ -110,12 +110,14 @@ def health():
 
 
 if __name__ == '__main__':
+    import sys
+
+    # Try different ports if 5000 is occupied
+    ports_to_try = [5000, 5001, 5002, 8000, 8080]
+
     print("=" * 60)
     print("作业题目质量评估系统 - Web 界面")
     print("=" * 60)
-    print()
-    print("服务器启动中...")
-    print("访问地址: http://localhost:5000")
     print()
     print("功能说明:")
     print("- 支持 10MB 以内的 PDF 文件")
@@ -124,7 +126,42 @@ if __name__ == '__main__':
     print("- 提供 5 个知识点标签")
     print("- 自动识别大题和小题")
     print()
+
+    # Find an available port
+    port = 5000
+    for test_port in ports_to_try:
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', test_port))
+        sock.close()
+
+        if result != 0:  # Port is available
+            port = test_port
+            break
+
+    print(f"服务器启动中...")
+    print(f"访问地址: http://localhost:{port}")
+    print()
     print("按 Ctrl+C 停止服务器")
     print("=" * 60)
+    print()
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    try:
+        app.run(host='0.0.0.0', port=port, debug=True)
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print()
+            print("=" * 60)
+            print("错误: 所有端口都被占用")
+            print("=" * 60)
+            print()
+            print("解决方案:")
+            print("1. macOS 用户: 关闭 AirPlay Receiver")
+            print("   系统设置 -> 通用 -> 隔空播放与接力 -> 关闭")
+            print()
+            print("2. 手动指定端口运行:")
+            print("   python3 app.py --port 8888")
+            print()
+            sys.exit(1)
+        else:
+            raise
