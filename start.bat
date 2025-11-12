@@ -16,15 +16,22 @@ if %errorlevel% neq 0 (
 
 echo [√] Python 已安装
 
-REM Check dependencies
-echo 检查依赖包...
-python -c "import flask" >nul 2>&1
+REM Install dependencies
+echo 检查并安装依赖包...
+python -m pip install --quiet Flask PyPDF2 python-docx requests >nul 2>&1
 if %errorlevel% neq 0 (
-    echo 正在安装依赖包...
-    python -m pip install -r requirements.txt
+    python -m pip install --ignore-installed Flask PyPDF2 python-docx requests
 )
 
-echo [√] 依赖包已就绪
+if %errorlevel% equ 0 (
+    echo [√] 依赖包已就绪
+) else (
+    echo [X] 依赖安装失败，请手动运行：
+    echo    python -m pip install Flask PyPDF2 python-docx requests
+    pause
+    exit /b 1
+)
+
 echo.
 echo 启动 Web 服务器...
 echo 访问地址: http://localhost:5000

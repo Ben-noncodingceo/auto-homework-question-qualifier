@@ -14,15 +14,18 @@ fi
 
 echo "✓ Python 已安装"
 
-# Check dependencies
-echo "检查依赖包..."
-python3 -c "import flask" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "正在安装依赖包..."
-    pip3 install -r requirements.txt
+# Install dependencies
+echo "检查并安装依赖包..."
+pip3 install --quiet Flask PyPDF2 python-docx requests 2>/dev/null || pip3 install --ignore-installed Flask PyPDF2 python-docx requests
+
+if [ $? -eq 0 ]; then
+    echo "✓ 依赖包已就绪"
+else
+    echo "❌ 依赖安装失败，请手动运行："
+    echo "   pip3 install Flask PyPDF2 python-docx requests"
+    exit 1
 fi
 
-echo "✓ 依赖包已就绪"
 echo ""
 echo "启动 Web 服务器..."
 echo "访问地址: http://localhost:5000"
