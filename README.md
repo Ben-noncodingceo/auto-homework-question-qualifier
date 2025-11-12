@@ -15,19 +15,67 @@
 - Python 3.7+
 - （可选）pdflatex - 用于生成PDF预览
 
-## 安装步骤
+## 快速开始（推荐）
 
-### 1. 克隆仓库
+### 方法一：自动安装（最简单）
+
+**Linux/macOS:**
+```bash
+cd auto-homework-question-qualifier
+./install.sh
+```
+
+**Windows:**
+```batch
+cd auto-homework-question-qualifier
+install.bat
+```
+
+安装脚本会自动：
+- 检查Python环境
+- 安装所有依赖包
+- 创建配置文件
+
+### 方法二：使用快速启动脚本
+
+```bash
+python3 quick_start.py
+```
+
+这个脚本会检查所有依赖并自动安装缺失的包。
+
+## 详细安装步骤
+
+### 1. 下载项目
 
 ```bash
 git clone <repository-url>
 cd auto-homework-question-qualifier
 ```
 
+或者直接下载ZIP文件并解压。
+
 ### 2. 安装Python依赖
 
+**方法1 - 使用 pip3（推荐）:**
+```bash
+pip3 install -r requirements.txt
+```
+
+**方法2 - 使用 pip:**
 ```bash
 pip install -r requirements.txt
+```
+
+**方法3 - 使用 python -m pip:**
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+**如果遇到 "ModuleNotFoundError" 错误：**
+这说明依赖包没有正确安装。请运行：
+```bash
+pip3 install python-dotenv PyPDF2 pdfplumber python-docx pylatexenc openai requests Pillow
 ```
 
 ### 3. （可选）安装LaTeX
@@ -192,9 +240,41 @@ auto-homework-question-qualifier/
 
 ## 故障排查
 
+### 问题: ModuleNotFoundError: No module named 'dotenv'
+
+这是最常见的问题，说明Python依赖包没有正确安装。
+
+**解决方案1 - 自动修复（推荐）:**
+```bash
+python3 quick_start.py
+```
+
+**解决方案2 - 手动安装:**
+```bash
+# 使用 pip3
+pip3 install -r requirements.txt
+
+# 或者直接安装所有包
+pip3 install python-dotenv PyPDF2 pdfplumber python-docx pylatexenc openai requests Pillow
+```
+
+**解决方案3 - 检查Python版本:**
+```bash
+# 确保使用正确的Python版本
+python3 --version  # 应该是 3.7+
+
+# 使用对应的pip
+python3 -m pip install -r requirements.txt
+```
+
 ### 问题: PDF预览生成失败
 
 **解决方案**: 确保已安装pdflatex，或使用 `--no-preview` 跳过预览生成
+
+```bash
+# 跳过预览
+python3 main.py homework.pdf --no-preview
+```
 
 ### 问题: API调用失败
 
