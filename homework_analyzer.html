@@ -679,17 +679,55 @@ ${pdfText}
             return latex;
         }
 
-        async function analyzeQuestions(pdfText) {
+        // 识别文档中的所有题目编号
+        async function identifyQuestions(pdfText) {
             const apiProvider = document.getElementById('apiProvider').value;
             const apiKey = document.getElementById('apiKey').value;
 
-            const prompt = `请分析以下文档中的题目，仅对大题进行分析，忽略小题。
+            const prompt = `请识别以下文档中所有的大题编号，忽略小题。
 
 文档内容：
 ${pdfText}
 
 要求：
-1. 识别所有大题（如：1. 2. 3. 或 一、二、三、等）
+1. 只识别大题编号（如：1. 2. 3. 或 一、二、三、等）
+2. 忽略小题编号（如：(1) (2) (a) (b) 等）
+3. 返回所有找到的大题编号
+
+返回JSON格式：
+{
+    "question_numbers": ["1", "2", "3", "4", "5"]
+}
+
+请直接返回JSON，不要包含其他说明文字。`;
+
+            const response = await callAIAPI(apiProvider, apiKey, prompt, 1000);
+
+            // Parse JSON
+            let jsonStr = response.trim();
+            if (jsonStr.includes('```json')) {
+                jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
+            } else if (jsonStr.includes('```')) {
+                jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
+            }
+
+            const data = JSON.parse(jsonStr);
+            return data.question_numbers || [];
+        }
+
+        // 分批分析题目（每批最多5个题目）
+        async function analyzeQuestionsBatch(pdfText, questionNumbers) {
+            const apiProvider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKey').value;
+
+            const numbersStr = questionNumbers.join('、');
+            const prompt = `请分析以下文档中编号为【${numbersStr}】的题目，仅对这些大题进行分析。
+
+文档内容：
+${pdfText}
+
+要求：
+1. 只分析编号为【${numbersStr}】的大题
 2. 忽略小题（如：(1) (2) (a) (b) 等）
 3. 对每道大题评估：
    - difficulty: 难度评分（0-5分，0最简单，5最难，保留1位小数）
@@ -745,6 +783,48 @@ ${pdfText}
                     keywords: keywords
                 };
             });
+        }
+
+        // 分批处理所有题目
+        async function analyzeQuestions(pdfText) {
+            // 第一步：识别所有题目编号
+            updateLoadingTip(4); // "正在识别大题和小题..."
+            const allQuestionNumbers = await identifyQuestions(pdfText);
+
+            // 检查题目数量
+            if (allQuestionNumbers.length === 0) {
+                throw new Error('未能识别到任何题目，请检查PDF格式');
+            }
+
+            if (allQuestionNumbers.length > 50) {
+                throw new Error('错误，题目过多，超过程序计算极限（最多支持50道题目）');
+            }
+
+            // 第二步：分批分析题目（每批5个）
+            const batchSize = 5;
+            const allResults = [];
+            const totalBatches = Math.ceil(allQuestionNumbers.length / batchSize);
+
+            for (let i = 0; i < totalBatches; i++) {
+                const start = i * batchSize;
+                const end = Math.min(start + batchSize, allQuestionNumbers.length);
+                const batchNumbers = allQuestionNumbers.slice(start, end);
+
+                // 更新加载提示
+                const tipsElement = document.getElementById('loadingTips');
+                tipsElement.textContent = `📊 正在分析题目 ${start + 1}-${end}（共 ${allQuestionNumbers.length} 道）...`;
+
+                // 分析当前批次
+                const batchResults = await analyzeQuestionsBatch(pdfText, batchNumbers);
+                allResults.push(...batchResults);
+
+                // 如果不是最后一批，短暂延迟避免API限流
+                if (i < totalBatches - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            return allResults;
         }
 
         async function callAIAPI(provider, apiKey, prompt, maxTokens) {
