@@ -1,304 +1,211 @@
-# Auto Homework Question Qualifier
+# 作业题目质量评估系统
 
-自动作业题目质量评估系统 - 将PDF/DOCX格式的题目转换为LaTeX，并使用AI模型评估题目难度和知识点标签。
+AI 驱动的 PDF 转 LaTeX 与题目难度分析工具
 
-## ✨ 功能特性
+## ✨ 功能特色
 
-- 🌐 **Web 界面**: 友好的浏览器界面，无需命令行操作
-- 📄 **文件转换**: 支持PDF和DOCX格式文件转换为LaTeX
-- 🤖 **AI分析**: 使用DeepSeek或ChatGPT API评估题目难度（1-5分制）
-- 🏷️ **知识点标签**: 自动提取3-5个关键知识点标签
-- 📊 **批量处理**: 自动识别文件中的多个题目，分别评估
-- 🚀 **轻量级**: 最小化依赖，仅需 4 个 Python 包
+- 🤖 **AI 驱动**: 使用 DeepSeek 或 ChatGPT API 完成所有处理
+- 📄 **PDF 转 LaTeX**: 自动将 PDF 文档转换为 LaTeX 代码
+- 📊 **智能分析**: 自动识别大题，忽略小题
+- 🎯 **难度评估**: 0-5 分精确难度评分（保留一位小数）
+- 🏷️ **知识点标签**: 每题自动提取 5 个关键知识点
+- 🌐 **Web 界面**: 简洁美观的浏览器操作界面
+- 🚀 **极简依赖**: 仅需 4 个 Python 包
 
 ## 📦 系统要求
 
 - Python 3.7+
-- 仅需 4 个依赖包（Flask, PyPDF2, python-docx, requests）
+- 仅需 4 个依赖包：Flask, PyPDF2, python-docx, requests
+- DeepSeek 或 OpenAI API 密钥
 
-## 🚀 快速开始（30秒启动）
+## 🚀 快速开始（30秒）
 
-### 方法一：一键启动（推荐）
+### 方法一：一键启动
 
 **Linux/macOS:**
 ```bash
-cd auto-homework-question-qualifier
 ./start.sh
 ```
 
 **Windows:**
 ```batch
-cd auto-homework-question-qualifier
 start.bat
 ```
-
-脚本会自动检查并安装依赖，然后启动 Web 服务器。
 
 ### 方法二：手动启动
 
 ```bash
-# 1. 安装依赖（只需要 4 个包）
+# 1. 安装依赖
 pip3 install Flask PyPDF2 python-docx requests
 
 # 2. 启动服务器
 python3 app.py
+
+# 3. 打开浏览器
+# 访问 http://localhost:5000
 ```
-
-### 访问应用
-
-打开浏览器访问：**http://localhost:5000**
 
 ## 📖 使用指南
 
-### Web 界面使用步骤
+### 1. 启动应用
 
-1. **上传文件**
-   - 点击上传区域或拖拽 PDF/DOCX 文件
-   - 支持的格式：PDF、DOCX
-   - 最大文件大小：16MB
+运行 `./start.sh` (Linux/macOS) 或 `start.bat` (Windows)，或手动运行 `python3 app.py`
 
-2. **转换 LaTeX**
-   - 点击"转换为 LaTeX"按钮
-   - 系统会自动识别文件中的题目
-   - 显示 LaTeX 预览
+### 2. 打开浏览器
 
-3. **AI 难度分析**
-   - 选择 API 提供商（DeepSeek 或 OpenAI）
-   - 输入你的 API 密钥
-   - 点击"开始分析"
+访问 `http://localhost:5000`
 
-4. **查看结果**
-   - 每道题目显示难度评分（1-5星）
-   - 显示 3-5 个知识点关键词标签
-   - 结果以卡片形式展示
+### 3. 上传 PDF 文件
 
-### 获取 API 密钥
+- 点击或拖拽上传 PDF 文件
+- 文件大小限制：10MB
 
-**DeepSeek（推荐，性价比高）:**
+### 4. 配置 API
+
+- 选择 API 提供商（DeepSeek 推荐）
+- 输入你的 API 密钥
+
+### 5. 开始处理
+
+点击"开始处理"按钮，等待 30-60 秒
+
+### 6. 查看结果
+
+- **LaTeX 代码**：完整的 LaTeX 文档
+- **题目分析**：每道大题的难度和知识点
+
+## 🔑 获取 API 密钥
+
+### DeepSeek（推荐，性价比高）
+
 1. 访问 https://platform.deepseek.com/
-2. 注册账号并获取 API 密钥
+2. 注册账号
+3. 创建 API 密钥
+4. 费用低廉（约 ¥0.001/千tokens）
 
-**OpenAI:**
+### OpenAI / ChatGPT
+
 1. 访问 https://platform.openai.com/
-2. 注册账号并获取 API 密钥
+2. 注册账号
+3. 创建 API 密钥
+4. 需要国际支付方式
 
-## 📋 安装详解
+## 📊 功能详解
 
-### 依赖包说明
+### 1. PDF 转 LaTeX
 
-本项目只需要 4 个轻量级 Python 包：
+系统使用 AI 模型将 PDF 内容转换为格式良好的 LaTeX 代码：
 
-```
-Flask        # Web 框架
-PyPDF2       # PDF 文本提取
-python-docx  # DOCX 文件处理
-requests     # HTTP 请求
-```
+- 保持原有结构和格式
+- 数学公式自动转换为 LaTeX 语法
+- 题目编号清晰标记
+- 生成完整可编译的 LaTeX 文档
 
-### 完整安装步骤
+### 2. 难度评估（0-5分）
 
-```bash
-# 1. 克隆或下载项目
-git clone <repository-url>
-cd auto-homework-question-qualifier
+**评分标准：**
+- **0-1分**: 基础概念，直接应用
+- **1-2分**: 简单应用，理解基本概念
+- **2-3分**: 中等难度，综合运用知识点
+- **3-4分**: 较难，需要深入分析
+- **4-5分**: 非常难，需要创新思维
 
-# 2. 安装依赖
-pip3 install -r requirements.txt
+**特点：**
+- 保留一位小数（如：2.5, 3.8）
+- 更精确的难度区分
+- 基于题目内容、知识点复杂度、解题思路等多维度评估
 
-# 3. 启动应用
-python3 app.py
-```
+### 3. 知识点标签
 
-### 使用安装脚本
+每道题目自动提取 **5 个**知识点标签：
 
-**Linux/macOS:**
-```bash
-./install.sh
-```
+- 准确描述题目涉及的核心概念
+- 便于题库分类和检索
+- 帮助学生了解知识点分布
 
-**Windows:**
-```batch
-install.bat
-```
+### 4. 大题识别
 
-## 🎯 难度评分标准
+系统智能识别题目结构：
 
-- **⭐ 1分**: 基础概念，直接应用
-- **⭐⭐ 2分**: 简单应用，需要理解基本概念
-- **⭐⭐⭐ 3分**: 中等难度，需要综合运用多个知识点
-- **⭐⭐⭐⭐ 4分**: 较难，需要深入理解和分析
-- **⭐⭐⭐⭐⭐ 5分**: 非常难，需要创新思维和综合能力
+**识别为大题的格式：**
+- `1.`, `2.`, `3.` ...
+- `一、`, `二、`, `三、` ...
+- `题1`, `题2` ...
+- `Question 1`, `Problem 1` ...
 
-## 📐 支持的题目格式
+**忽略的小题格式：**
+- `(1)`, `(2)` ...
+- `(a)`, `(b)` ...
+- `①`, `②` ...
+- `i.`, `ii.` ...
 
-程序会自动识别以下格式的题目编号：
-
-- `1.` 或 `1、`
-- `问题1` 或 `题1`
-- `Question 1` 或 `Problem 1`
-- `(1)` 或 `[1]`
-
-## 🗂️ 项目结构
+## 📁 项目结构
 
 ```
 auto-homework-question-qualifier/
 ├── app.py                      # Flask Web 应用
 ├── start.sh                    # Linux/macOS 启动脚本
 ├── start.bat                   # Windows 启动脚本
-├── requirements.txt            # Python 依赖（仅 4 个）
+├── requirements.txt            # 依赖包（仅 4 个）
 ├── templates/
 │   └── index.html             # Web 前端界面
 ├── src/
-│   ├── converters/            # 文件转换模块
-│   │   ├── pdf_converter.py   # PDF转LaTeX
-│   │   └── docx_converter.py  # DOCX转LaTeX
-│   ├── parser/                # 解析模块
-│   │   └── question_parser.py # 题目解析器
-│   └── analyzer/              # 分析模块
-│       └── difficulty_analyzer.py # 难度分析器
-├── uploads/                   # 上传文件目录（自动创建）
-└── output/                    # 输出文件目录（自动创建）
+│   └── ai_processor.py        # AI 处理核心模块
+├── uploads/                   # 上传目录（自动创建）
+└── output/                    # 输出目录（自动创建）
 ```
-
-## 🔧 故障排查
-
-### 问题: ModuleNotFoundError
-
-**解决方案:**
-```bash
-# 安装所有依赖
-pip3 install -r requirements.txt
-
-# 或者单独安装
-pip3 install Flask PyPDF2 python-docx requests
-```
-
-### 问题: 无法访问 Web 界面
-
-**检查项:**
-1. 确认服务器已启动：控制台应显示 "Running on http://0.0.0.0:5000"
-2. 浏览器访问：http://localhost:5000
-3. 检查防火墙设置
-
-### 问题: API 调用失败
-
-**解决方案:**
-1. 检查 API 密钥是否正确
-2. 确认网络连接正常
-3. 验证 API 余额是否充足
-
-### 问题: 文件上传失败
-
-**解决方案:**
-1. 检查文件大小（需小于 16MB）
-2. 确认文件格式（PDF 或 DOCX）
-3. 查看控制台错误信息
 
 ## 💡 使用技巧
 
-### 1. 批量处理
-Web 界面支持一次上传包含多个题目的文件，系统会自动识别并分析所有题目。
+### 1. 节省 API 费用
 
-### 2. LaTeX 导出
-转换后的 LaTeX 文件保存在 `output/` 目录，可以直接下载使用。
+- 优先使用 DeepSeek（比 OpenAI 便宜 95%）
+- 合并多个题目到一个 PDF
+- 避免重复处理相同文件
 
-### 3. 节省 API 费用
-- 使用 DeepSeek API（比 OpenAI 便宜很多）
-- 先转换 LaTeX 查看题目，再决定是否分析
-- 可以只上传需要分析的题目
+### 2. 提高准确度
 
-### 4. 离线使用
-如果不需要 AI 分析，可以只使用文件转换功能，无需 API 密钥。
+- PDF 文件尽量清晰，避免扫描件
+- 题目编号使用标准格式
+- 数学公式使用标准符号
 
-## 🌟 特色功能
+### 3. 批量处理
 
-### 最小化依赖
-相比之前的版本，我们精简了依赖包：
+- 可以上传包含多道题目的 PDF
+- 系统自动识别并分别分析
+- 结果统一展示
 
-**之前**: 8个包（包括 pdfplumber, openai, Pillow, pylatexenc 等）
-**现在**: 4个包（Flask, PyPDF2, python-docx, requests）
+## 🔧 故障排查
 
-### Web 界面优势
-- ✅ 无需命令行知识
-- ✅ 可视化操作流程
-- ✅ 实时预览和反馈
-- ✅ 美观的卡片式结果展示
-- ✅ 支持拖拽上传
-
-### API 集成简化
-- 不再需要 OpenAI 官方包
-- 直接使用 HTTP 请求
-- 支持多种 AI 提供商
-- 更容易扩展和调试
-
-## 📸 界面预览
-
-Web 界面包含四个步骤：
-
-1. **上传文件**: 拖拽或点击上传 PDF/DOCX
-2. **LaTeX 预览**: 查看转换后的 LaTeX 代码
-3. **AI 分析**: 配置 API 并开始分析
-4. **结果展示**: 查看每道题的难度和关键词
-
-## 🔐 隐私说明
-
-- 所有文件在本地处理
-- 仅题目内容会发送到 AI API 进行分析
-- 不会存储或上传你的 API 密钥
-- 上传的文件保存在本地 `uploads/` 目录
-
-## 📝 示例工作流程
+### 问题: 依赖安装失败
 
 ```bash
-# 1. 启动服务器
-./start.sh
+# 升级 pip
+pip3 install --upgrade pip
 
-# 2. 打开浏览器
-# 访问 http://localhost:5000
-
-# 3. 上传文件
-# 拖拽你的 homework.pdf 到上传区域
-
-# 4. 转换 LaTeX
-# 点击"转换为 LaTeX"按钮
-
-# 5. AI 分析
-# 输入 API 密钥，点击"开始分析"
-
-# 6. 查看结果
-# 每道题显示难度和知识点标签
+# 重新安装
+pip3 install -r requirements.txt
 ```
 
-## 🛠️ 开发说明
+### 问题: API 调用失败
 
-### 启动开发服务器
+**检查项：**
+1. API 密钥是否正确
+2. 网络连接是否正常
+3. API 余额是否充足
+4. API 限流是否触发
 
-```bash
-python3 app.py
-```
+### 问题: PDF 处理失败
 
-服务器会在 http://localhost:5000 启动，并开启调试模式。
-
-### API 端点
-
-- `GET /` - 主页
-- `POST /api/upload` - 文件上传
-- `POST /api/convert` - LaTeX 转换
-- `POST /api/analyze` - AI 难度分析
-- `GET /api/download/<filename>` - 文件下载
-
-## 🤝 贡献
-
-欢迎提交问题和 Pull Request！
+**可能原因：**
+1. PDF 是扫描件（建议使用 OCR）
+2. PDF 包含非文本内容
+3. 文件损坏或加密
 
 ## 📄 许可证
 
 MIT License
 
-## 📧 联系方式
-
-如有问题或建议，请提交 Issue。
-
 ---
 
-**提示**: 首次使用建议先阅读"快速开始"部分，30秒即可启动应用！
+**提示**: 首次使用？只需运行 `./start.sh` 并访问 http://localhost:5000 即可！

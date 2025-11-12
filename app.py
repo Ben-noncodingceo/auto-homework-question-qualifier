@@ -8,10 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from pathlib import Path
 
-from src.converters.pdf_converter import PDFConverter
-from src.converters.docx_converter import DOCXConverter
-from src.parser.question_parser import QuestionParser
-from src.analyzer.difficulty_analyzer import DifficultyAnalyzer
+from src.ai_processor import AIProcessor
 
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -19,11 +16,11 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'output'
-ALLOWED_EXTENSIONS = {'pdf', 'docx'}
+ALLOWED_EXTENSIONS = {'pdf'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
 # Create directories
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
@@ -41,13 +38,13 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    """Handle file upload"""
+@app.route('/api/process', methods=['POST'])
+def process_pdf():
+    """Process PDF file: convert to LaTeX and analyze questions"""
     try:
         # Check if file is in request
         if 'file' not in request.files:
-            return jsonify({'error': '没有文件'}), 400
+            return jsonify({'error': '没有上传文件'}), 400
 
         file = request.files['file']
 
@@ -55,93 +52,45 @@ def upload_file():
             return jsonify({'error': '未选择文件'}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({'error': '不支持的文件格式，请上传 PDF 或 DOCX 文件'}), 400
+            return jsonify({'error': '只支持 PDF 格式文件'}), 400
 
-        # Save file
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-
-        return jsonify({
-            'success': True,
-            'filename': filename,
-            'file_path': file_path
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/convert', methods=['POST'])
-def convert_to_latex():
-    """Convert uploaded file to LaTeX"""
-    try:
-        data = request.get_json()
-        file_path = data.get('file_path')
-
-        if not file_path or not os.path.exists(file_path):
-            return jsonify({'error': '文件不存在'}), 400
-
-        # Determine file type
-        file_ext = Path(file_path).suffix.lower()
-
-        # Convert to LaTeX
-        if file_ext == '.pdf':
-            converter = PDFConverter()
-            latex_content = converter.convert(file_path)
-        elif file_ext == '.docx':
-            converter = DOCXConverter()
-            latex_content = converter.convert(file_path)
-        else:
-            return jsonify({'error': '不支持的文件格式'}), 400
-
-        # Save LaTeX file
-        output_filename = Path(file_path).stem + '.tex'
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(latex_content)
-
-        # Parse questions
-        parser = QuestionParser()
-        questions = parser.parse(latex_content)
-
-        return jsonify({
-            'success': True,
-            'latex_content': latex_content,
-            'output_path': output_path,
-            'question_count': len(questions),
-            'questions': questions
-        })
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/analyze', methods=['POST'])
-def analyze_questions():
-    """Analyze questions for difficulty and keywords"""
-    try:
-        data = request.get_json()
-        questions = data.get('questions', [])
-        api_provider = data.get('api_provider', 'deepseek')
-        api_key = data.get('api_key', '')
+        # Get API configuration
+        api_provider = request.form.get('api_provider', 'deepseek')
+        api_key = request.form.get('api_key', '').strip()
 
         if not api_key:
             return jsonify({'error': '请提供 API 密钥'}), 400
 
-        if not questions:
-            return jsonify({'error': '没有题目需要分析'}), 400
+        # Save uploaded file
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
 
-        # Initialize analyzer
-        analyzer = DifficultyAnalyzer(api_provider=api_provider, api_key=api_key)
+        # Process PDF with AI
+        processor = AIProcessor(api_provider=api_provider, api_key=api_key)
 
-        # Analyze questions
-        results = analyzer.analyze_questions(questions)
+        latex_code, question_analysis = processor.process_pdf(file_path)
+
+        # Save LaTeX file
+        latex_filename = Path(filename).stem + '.tex'
+        latex_path = os.path.join(app.config['OUTPUT_FOLDER'], latex_filename)
+
+        with open(latex_path, 'w', encoding='utf-8') as f:
+            f.write(latex_code)
+
+        # Save analysis results
+        results_filename = Path(filename).stem + '_analysis.json'
+        results_path = os.path.join(app.config['OUTPUT_FOLDER'], results_filename)
+
+        with open(results_path, 'w', encoding='utf-8') as f:
+            json.dump(question_analysis, f, ensure_ascii=False, indent=2)
 
         return jsonify({
             'success': True,
-            'results': results
+            'latex_code': latex_code,
+            'latex_filename': latex_filename,
+            'question_analysis': question_analysis,
+            'question_count': len(question_analysis)
         })
 
     except Exception as e:
@@ -162,11 +111,18 @@ def health():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Auto Homework Question Qualifier - Web Interface")
+    print("作业题目质量评估系统 - Web 界面")
     print("=" * 60)
     print()
     print("服务器启动中...")
     print("访问地址: http://localhost:5000")
+    print()
+    print("功能说明:")
+    print("- 支持 10MB 以内的 PDF 文件")
+    print("- 自动转换为 LaTeX 代码")
+    print("- AI 评估题目难度（0-5分）")
+    print("- 提供 5 个知识点标签")
+    print("- 自动识别大题和小题")
     print()
     print("按 Ctrl+C 停止服务器")
     print("=" * 60)
