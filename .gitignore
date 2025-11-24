@@ -35,7 +35,8 @@ env/
 # Environment variables
 .env
 
-# Output files
+# Uploads and Output files
+uploads/
 output/
 *.pdf
 *.docx
@@ -44,3 +45,4 @@ output/
 
 # Logs
 *.log
+app.log
