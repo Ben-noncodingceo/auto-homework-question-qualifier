@@ -1,13 +1,15 @@
 /**
- * Document Parser - Extracts text from PDF and Word documents
- * For Cloudflare Workers environment
+ * Document Parser - Extracts text and images from PDF and Word documents
+ * For Cloudflare Workers environment with multimodal AI support
  */
+
+import { DocumentContent, ExtractedImage } from '../types';
 
 export class DocumentParser {
   /**
-   * Parse document and extract text content
+   * Parse document and extract text and image content
    */
-  static async parseDocument(file: File): Promise<string> {
+  static async parseDocument(file: File): Promise<DocumentContent> {
     const arrayBuffer = await file.arrayBuffer();
     const filename = file.name.toLowerCase();
 
@@ -21,42 +23,53 @@ export class DocumentParser {
   }
 
   /**
-   * Parse PDF document using pdf-parse library
-   * Note: In Workers environment, we may need to use a lighter alternative
+   * Parse PDF document and extract both text and images
+   * Enhanced for multimodal AI processing
    */
-  private static async parsePDF(buffer: ArrayBuffer): Promise<string> {
+  private static async parsePDF(buffer: ArrayBuffer): Promise<DocumentContent> {
     try {
-      // Simple PDF text extraction for Workers
-      // This is a basic implementation - for production, consider using
-      // Cloudflare Workers AI for OCR or a specialized PDF parsing library
-
       const uint8Array = new Uint8Array(buffer);
+
+      // Extract text using multiple strategies
       const text = this.extractTextFromPDFBuffer(uint8Array);
 
-      if (!text || text.trim().length === 0) {
-        throw new Error('No text content found in PDF. The file may be image-based or corrupted.');
+      // Extract images from PDF
+      const images = this.extractImagesFromPDF(uint8Array);
+
+      if ((!text || text.trim().length === 0) && images.length === 0) {
+        throw new Error('No text or image content found in PDF. The file may be corrupted.');
       }
 
-      return text;
+      return {
+        text: text || '',
+        images: images
+      };
     } catch (error) {
       throw new Error(`Failed to parse PDF: ${error}`);
     }
   }
 
   /**
-   * Parse Word document
+   * Parse Word document and extract both text and images
    */
-  private static async parseWord(buffer: ArrayBuffer): Promise<string> {
+  private static async parseWord(buffer: ArrayBuffer): Promise<DocumentContent> {
     try {
-      // For Word documents, we need to extract text from the XML structure
-      // This is a simplified implementation
-      const text = this.extractTextFromWordBuffer(new Uint8Array(buffer));
+      const uint8Array = new Uint8Array(buffer);
 
-      if (!text || text.trim().length === 0) {
-        throw new Error('No text content found in Word document.');
+      // Extract text from Word XML structure
+      const text = this.extractTextFromWordBuffer(uint8Array);
+
+      // Extract images from Word document
+      const images = this.extractImagesFromWord(uint8Array);
+
+      if ((!text || text.trim().length === 0) && images.length === 0) {
+        throw new Error('No text or image content found in Word document.');
       }
 
-      return text;
+      return {
+        text: text || '',
+        images: images
+      };
     } catch (error) {
       throw new Error(`Failed to parse Word document: ${error}`);
     }
@@ -253,6 +266,141 @@ export class DocumentParser {
     }
 
     return texts.join(' ').trim();
+  }
+
+  /**
+   * Extract images from PDF buffer
+   * Looks for JPEG and PNG images embedded in PDF
+   */
+  private static extractImagesFromPDF(buffer: Uint8Array): ExtractedImage[] {
+    const images: ExtractedImage[] = [];
+    const decoder = new TextDecoder('latin1', { fatal: false });
+    const content = decoder.decode(buffer);
+
+    let imageIndex = 0;
+
+    // Strategy 1: Find JPEG images (starts with FF D8 FF, ends with FF D9)
+    const jpegStartMarker = '\xFF\xD8\xFF';
+    const jpegEndMarker = '\xFF\xD9';
+
+    let pos = 0;
+    while ((pos = content.indexOf(jpegStartMarker, pos)) !== -1) {
+      const endPos = content.indexOf(jpegEndMarker, pos);
+      if (endPos !== -1) {
+        const imageData = content.substring(pos, endPos + 2);
+        const base64 = this.arrayBufferToBase64(new TextEncoder().encode(imageData));
+
+        images.push({
+          data: base64,
+          mimeType: 'image/jpeg',
+          index: imageIndex++
+        });
+
+        pos = endPos + 2;
+      } else {
+        break;
+      }
+    }
+
+    // Strategy 2: Find PNG images (starts with 89 50 4E 47, contains IEND)
+    const pngStartMarker = '\x89PNG';
+    const pngEndMarker = 'IEND';
+
+    pos = 0;
+    while ((pos = content.indexOf(pngStartMarker, pos)) !== -1) {
+      const endPos = content.indexOf(pngEndMarker, pos);
+      if (endPos !== -1) {
+        const imageData = content.substring(pos, endPos + 8); // IEND + 4 bytes CRC
+        const base64 = this.arrayBufferToBase64(new TextEncoder().encode(imageData));
+
+        images.push({
+          data: base64,
+          mimeType: 'image/png',
+          index: imageIndex++
+        });
+
+        pos = endPos + 8;
+      } else {
+        break;
+      }
+    }
+
+    return images;
+  }
+
+  /**
+   * Extract images from Word (.docx) buffer
+   * Word files are ZIP archives containing media files
+   */
+  private static extractImagesFromWord(buffer: Uint8Array): ExtractedImage[] {
+    const images: ExtractedImage[] = [];
+
+    // Word documents are ZIP files, we look for image files in the ZIP structure
+    // This is a simplified implementation
+    const decoder = new TextDecoder('latin1', { fatal: false });
+    const content = decoder.decode(buffer);
+
+    let imageIndex = 0;
+
+    // Look for JPEG images
+    const jpegStartMarker = '\xFF\xD8\xFF';
+    const jpegEndMarker = '\xFF\xD9';
+
+    let pos = 0;
+    while ((pos = content.indexOf(jpegStartMarker, pos)) !== -1) {
+      const endPos = content.indexOf(jpegEndMarker, pos);
+      if (endPos !== -1) {
+        const imageData = content.substring(pos, endPos + 2);
+        const base64 = this.arrayBufferToBase64(new TextEncoder().encode(imageData));
+
+        images.push({
+          data: base64,
+          mimeType: 'image/jpeg',
+          index: imageIndex++
+        });
+
+        pos = endPos + 2;
+      } else {
+        break;
+      }
+    }
+
+    // Look for PNG images
+    const pngStartMarker = '\x89PNG';
+    const pngEndMarker = 'IEND';
+
+    pos = 0;
+    while ((pos = content.indexOf(pngStartMarker, pos)) !== -1) {
+      const endPos = content.indexOf(pngEndMarker, pos);
+      if (endPos !== -1) {
+        const imageData = content.substring(pos, endPos + 8);
+        const base64 = this.arrayBufferToBase64(new TextEncoder().encode(imageData));
+
+        images.push({
+          data: base64,
+          mimeType: 'image/png',
+          index: imageIndex++
+        });
+
+        pos = endPos + 8;
+      } else {
+        break;
+      }
+    }
+
+    return images;
+  }
+
+  /**
+   * Convert Uint8Array to base64 string
+   */
+  private static arrayBufferToBase64(buffer: Uint8Array): string {
+    let binary = '';
+    const len = buffer.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(buffer[i]);
+    }
+    return btoa(binary);
   }
 
   /**

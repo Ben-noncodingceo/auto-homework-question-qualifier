@@ -7,9 +7,24 @@ export interface AIModelConfig {
   temperature: number;
 }
 
+// Multimodal content types
+export interface TextContent {
+  type: 'text';
+  text: string;
+}
+
+export interface ImageContent {
+  type: 'image_url';
+  image_url: {
+    url: string; // base64 data URL or HTTP URL
+  };
+}
+
+export type MessageContent = string | Array<TextContent | ImageContent>;
+
 export interface AIMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: MessageContent;
 }
 
 export interface AIResponse {
@@ -22,6 +37,17 @@ export interface AIResponse {
 }
 
 // Document types
+export interface ExtractedImage {
+  data: string; // base64 encoded image data
+  mimeType: string; // image/png, image/jpeg, etc.
+  index: number; // position in document
+}
+
+export interface DocumentContent {
+  text: string;
+  images: ExtractedImage[];
+}
+
 export interface Question {
   question_number: string;
   content: string;
