@@ -1,10 +1,10 @@
-name = "homework-analyzer-api"
+name = "auto-homework-question-qualifier"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 # Environment variables (non-sensitive)
 [vars]
-ALLOWED_ORIGINS = "https://your-domain.pages.dev,http://localhost:8788"
+ALLOWED_ORIGINS = "https://auto-homework-question-qualifier.pages.dev,http://localhost:8788"
 
 # Secrets (sensitive data - set via CLI)
 # wrangler secret put DEEPSEEK_API_KEY
