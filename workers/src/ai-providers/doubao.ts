@@ -4,6 +4,9 @@ import { AIMessage, AIResponse } from '../types';
 /**
  * Doubao (豆包) AI Provider - ByteDance Volcengine
  * API Documentation: https://www.volcengine.com/docs/82379/1099475
+ *
+ * Supports multimodal input (text + images) for advanced models
+ * Particularly useful for chemistry problems with molecular structure diagrams
  */
 export class DoubaoProvider extends BaseAIProvider {
   constructor(apiKey: string) {
@@ -17,6 +20,9 @@ export class DoubaoProvider extends BaseAIProvider {
     temperature: number = 0.3,
     maxTokens: number = 4000
   ): Promise<AIResponse> {
+    // Doubao supports multimodal messages with text and image content
+    // The messages array can contain content as string or as array of content objects
+    // For images, use: { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,...' } }
     const data = await this.fetchAPI(`${this.baseURL}/chat/completions`, {
       model,
       messages,

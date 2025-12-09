@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://auto-homework-question-qualifier.peungsun.workers.
 const MODELS = {
     deepseek: [
         { id: 'deepseek-chat', name: 'DeepSeek Chat' },
-        { id: 'deepseek-coder', name: 'DeepSeek Coder' }
+        { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' }
     ],
     doubao: [
         { id: 'doubao-pro-32k', name: 'Doubao Pro 32K' },

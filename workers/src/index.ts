@@ -112,25 +112,30 @@ async function handleAnalyze(
     console.log(`Processing file: ${file.name} (${file.size} bytes)`);
     console.log(`Using ${config.provider} - ${config.model} (temp: ${config.temperature})`);
 
-    // Step 1: Parse document
+    // Step 1: Parse document (extract text and images)
     console.log('Parsing document...');
-    const documentText = await DocumentParser.parseDocument(file);
+    const documentContent = await DocumentParser.parseDocument(file);
 
-    if (!DocumentParser.validateContent(documentText)) {
-      throw new Error('No valid text content found in document');
+    console.log(`Extracted ${documentContent.text.length} characters and ${documentContent.images.length} images`);
+
+    // Validate that we have some content
+    if (!DocumentParser.validateContent(documentContent.text) && documentContent.images.length === 0) {
+      throw new Error('No valid content found in document. Please ensure the PDF contains readable text or images.');
     }
-
-    console.log(`Extracted ${documentText.length} characters`);
 
     // Step 2: Create AI provider
     const aiProvider = AIProviderFactory.create(config.provider, env);
 
-    // Step 3: Analyze questions
+    // Step 3: Analyze questions with multimodal support
     console.log('Analyzing questions with AI...');
-    const analyzer = new QuestionAnalyzer(aiProvider, config);
-    const questions = await analyzer.analyzeDocument(documentText);
+    if (documentContent.images.length > 0) {
+      console.log(`📷 Using multimodal analysis (${documentContent.images.length} images)`);
+    }
 
-    console.log(`Analysis complete: ${questions.length} questions processed`);
+    const analyzer = new QuestionAnalyzer(aiProvider, config, documentContent);
+    const questions = await analyzer.analyzeDocument();
+
+    console.log(`✅ Analysis complete: ${questions.length} questions processed`);
 
     // Return results
     return new Response(
@@ -139,7 +144,9 @@ async function handleAnalyze(
         data: {
           questions,
           total_count: questions.length,
-          document_length: documentText.length
+          document_length: documentContent.text.length,
+          image_count: documentContent.images.length,
+          has_multimodal: documentContent.images.length > 0
         }
       }),
       {
