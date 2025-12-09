@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>作业题目质量评估系统</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>作业题目智能分析系统 v2.0</title>
     <style>
         * {
             margin: 0;
@@ -14,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -32,7 +30,7 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
         }
 
@@ -41,9 +39,15 @@
             margin-bottom: 10px;
         }
 
+        .header .version {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
         .header p {
             font-size: 1.1em;
             opacity: 0.9;
+            margin-top: 10px;
         }
 
         .content {
@@ -64,6 +68,40 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            gap: 10px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        select, input[type="number"], input[type="text"], input[type="file"] {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .upload-area {
@@ -87,29 +125,22 @@
             border-color: #4c63d2;
         }
 
-        input[type="file"] {
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .file-info {
             display: none;
-        }
-
-        .api-config {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 15px;
             margin: 20px 0;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
         }
 
-        select, input[type="password"], input[type="text"] {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-            width: 100%;
-        }
-
-        select:focus, input[type="password"]:focus, input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
+        .file-info.active {
+            display: block;
         }
 
         .btn {
@@ -136,98 +167,10 @@
             box-shadow: none;
         }
 
-        .latex-preview {
-            background: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin-top: 20px;
-        }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .result-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            padding: 25px;
-            transition: all 0.3s;
-        }
-
-        .result-card:hover {
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            transform: translateY(-5px);
-        }
-
-        .question-number {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .difficulty {
-            display: flex;
-            align-items: center;
-            margin: 15px 0;
-            font-size: 1.1em;
-        }
-
-        .difficulty-label {
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .difficulty-value {
-            color: #ff6b6b;
-            font-size: 1.3em;
-            font-weight: bold;
-        }
-
-        .difficulty-bar {
-            flex: 1;
-            height: 10px;
-            background: #e0e0e0;
-            border-radius: 5px;
-            margin: 0 10px;
-            overflow: hidden;
-        }
-
-        .difficulty-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #52c41a 0%, #faad14 50%, #ff4d4f 100%);
-            transition: width 0.3s;
-        }
-
-        .keywords {
-            margin-top: 15px;
-        }
-
-        .keyword-tag {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 6px 15px;
-            border-radius: 20px;
-            margin: 5px 5px 5px 0;
-            font-size: 0.9em;
-        }
-
         .loading {
+            display: none;
             text-align: center;
             padding: 40px;
-            display: none;
         }
 
         .loading.active {
@@ -249,51 +192,174 @@
             100% { transform: rotate(360deg); }
         }
 
-        .loading-tips {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e7f3ff;
-            border-radius: 10px;
+        .progress-text {
             font-size: 1.1em;
-            color: #0c5460;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.5s;
+            color: #667eea;
+            margin-top: 10px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .hidden {
+        .results {
             display: none;
         }
 
-        .alert {
-            padding: 15px;
+        .results.active {
+            display: block;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: white;
             border-radius: 10px;
-            margin: 20px 0;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
         }
 
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .question-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .question-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+        }
+
+        .question-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .question-subject {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .question-analysis {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #444;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tags-section {
+            margin: 15px 0;
+        }
+
+        .tags-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 3px;
+            font-size: 0.85em;
+        }
+
+        .knowledge-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .ability-tag {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .difficulty-bar {
+            margin: 15px 0;
+        }
+
+        .difficulty-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .difficulty-visual {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .difficulty-track {
+            flex: 1;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .difficulty-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #52c41a 0%, #faad14 50%, #ff4d4f 100%);
+            transition: width 0.3s;
+        }
+
+        .difficulty-value {
+            color: #ff6b6b;
+            font-weight: bold;
+            min-width: 40px;
+        }
+
+        .export-btn {
+            background: #28a745;
+            display: inline-block;
+            margin-right: 10px;
+            margin-top: 10px;
+            padding: 10px 20px;
+            width: auto;
+        }
+
+        .export-btn:hover {
+            background: #218838;
         }
 
         .info-box {
@@ -313,154 +379,127 @@
             margin: 5px 0;
         }
 
-        .download-btn {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            text-decoration: none;
-            margin-top: 15px;
-            margin-right: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-            font-size: 1em;
-        }
-
-        .download-btn:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
-
-        .download-btn.excel {
-            background: #28a745;
-        }
-
-        .download-btn.copy {
-            background: #17a2b8;
-        }
-
-        .stats-bar {
-            display: flex;
-            justify-content: space-around;
-            padding: 20px;
-            background: white;
+        .alert {
+            padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin: 20px 0;
         }
 
-        .stat-item {
-            text-align: center;
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .stat-label {
-            color: #666;
-            margin-top: 5px;
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📚 作业题目质量评估系统</h1>
-            <p>纯前端 AI 驱动 - 无需安装任何软件，直接在浏览器中运行</p>
+            <h1>🎓 作业题目智能分析系统</h1>
+            <p class="version">v2.0 - Powered by Cloudflare Workers</p>
+            <p>AI 驱动的题目解析 • 多模型支持 • 智能标签生成</p>
         </div>
 
         <div class="content">
-            <!-- Upload Section -->
+            <!-- AI Configuration Section -->
             <div class="section">
-                <div class="section-title">📤 上传 PDF 文件</div>
+                <div class="section-title">⚙️ AI 模型配置</div>
 
-                <div class="upload-area" id="uploadArea">
-                    <p style="font-size: 1.2em; margin-bottom: 10px;">📎 点击或拖拽 PDF 文件到这里</p>
-                    <p style="color: #666;">最大文件大小：10MB</p>
-                    <input type="file" id="fileInput" accept=".pdf">
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label for="aiProvider">AI 提供商</label>
+                        <select id="aiProvider">
+                            <option value="deepseek">DeepSeek（深度求索）</option>
+                            <option value="doubao">Doubao（豆包 - 字节跳动）</option>
+                            <option value="tongyi">Tongyi（通义千问 - 阿里云）</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiModel">模型选择</label>
+                        <select id="aiModel">
+                            <option value="deepseek-chat">DeepSeek Chat</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="temperature">温度参数 (Temperature)</label>
+                        <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.3">
+                    </div>
                 </div>
 
-                <div id="fileInfo" class="hidden" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 10px;">
+                <div class="info-box">
+                    <strong>💡 提示：</strong>
+                    <ul>
+                        <li>温度参数控制输出的随机性：0 = 确定性强，2 = 创造性强</li>
+                        <li>建议值：题目分析使用 0.3-0.5，创意内容使用 0.7-1.0</li>
+                        <li>API 密钥已在服务器端配置，无需手动输入</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="section">
+                <div class="section-title">📤 上传文档</div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <p style="font-size: 1.2em; margin-bottom: 10px;">点击或拖拽文件到这里</p>
+                    <p style="color: #666;">支持 PDF 和 Word 文档（最大 10MB）</p>
+                    <input type="file" id="fileInput" accept=".pdf,.doc,.docx" style="display: none;">
+                </div>
+
+                <div class="file-info" id="fileInfo">
                     <p><strong>✓ 已选择文件：</strong> <span id="fileName"></span></p>
                     <p style="margin-top: 5px; color: #666;"><strong>文件大小：</strong> <span id="fileSize"></span></p>
                 </div>
 
-                <div class="info-box">
-                    <strong>📋 功能说明：</strong>
-                    <ul>
-                        <li>✅ 纯前端运行，无需安装Python或任何软件</li>
-                        <li>✅ 支持 10MB 以内的 PDF 文件</li>
-                        <li>✅ 自动使用 AI 将 PDF 转换为 LaTeX 代码</li>
-                        <li>✅ 自动识别大题，忽略小题</li>
-                        <li>✅ 难度评分：0-5 分（保留1位小数）</li>
-                        <li>✅ 每题提供 5 个知识点标签</li>
-                        <li>✅ 支持导出 Excel 表格</li>
-                    </ul>
-                </div>
-
-                <div class="section-title" style="margin-top: 30px;">🔑 API 配置</div>
-
-                <div class="api-config">
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">API 提供商</label>
-                        <select id="apiProvider">
-                            <option value="deepseek">DeepSeek（推荐）</option>
-                            <option value="openai">OpenAI / ChatGPT</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">API 密钥</label>
-                        <input type="password" id="apiKey" placeholder="输入你的 API 密钥">
-                    </div>
-                </div>
-
-                <button class="btn" id="processBtn" disabled>开始处理</button>
+                <button class="btn" id="analyzeBtn" disabled>开始分析</button>
             </div>
 
-            <!-- Loading -->
+            <!-- Loading Section -->
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p id="loadingText" style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">处理中，请稍候...</p>
-                <div class="loading-tips" id="loadingTips">正在启动 AI 处理引擎...</div>
+                <p style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">AI 正在分析中...</p>
+                <p class="progress-text" id="progressText">正在解析文档内容...</p>
             </div>
 
             <!-- Results Section -->
-            <div id="resultsSection" class="hidden">
-                <!-- Statistics Bar -->
-                <div class="stats-bar">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalQuestions">0</div>
-                        <div class="stat-label">题目总数</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="avgDifficulty">0.0</div>
-                        <div class="stat-label">平均难度</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="hardestQuestion">-</div>
-                        <div class="stat-label">最难题号</div>
-                    </div>
-                </div>
-
-                <!-- LaTeX Preview -->
+            <div class="results" id="results">
                 <div class="section">
-                    <div class="section-title">📝 LaTeX 代码</div>
-                    <p><strong>题目数量：</strong> <span id="questionCount"></span></p>
-                    <button class="download-btn" id="downloadLatex">⬇️ 下载 LaTeX 文件</button>
-                    <button class="download-btn copy" id="copyLatex">📋 复制代码</button>
-                    <div class="latex-preview" id="latexPreview"></div>
-                </div>
+                    <div class="section-title">📊 分析结果</div>
 
-                <!-- Question Analysis -->
-                <div class="section">
-                    <div class="section-title">📊 题目分析结果（共 <span id="resultCount">0</span> 道题）</div>
-                    <button class="download-btn excel" id="downloadExcel">📊 下载 Excel 表格</button>
-                    <button class="download-btn" id="downloadJSON">📄 下载 JSON 数据</button>
-                    <div id="resultsContainer" class="results-grid"></div>
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalQuestions">0</div>
+                            <div class="stat-label">题目总数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="avgDifficulty">0.0</div>
+                            <div class="stat-label">平均难度</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="subjects">0</div>
+                            <div class="stat-label">涉及学科</div>
+                        </div>
+                    </div>
+
+                    <button class="export-btn" id="exportJSON">📄 导出 JSON</button>
+                    <button class="export-btn" id="exportExcel">📊 导出 Excel</button>
+
+                    <div id="questionsContainer" class="questions-grid"></div>
                 </div>
             </div>
 
@@ -469,562 +508,7 @@
         </div>
     </div>
 
-    <script>
-        // Configure PDF.js worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-        let selectedFile = null;
-        let latexCode = '';
-        let analysisResults = [];
-        let loadingInterval = null;
-
-        // 10 different loading tips
-        const loadingTips = [
-            '🤖 AI 正在读取您的 PDF 文件...',
-            '📖 正在分析文档结构和题目编号...',
-            '✨ AI 正在将内容转换为 LaTeX 格式...',
-            '🎯 正在识别大题和小题...',
-            '📊 AI 正在评估题目难度...',
-            '🏷️ 正在提取知识点标签...',
-            '🔍 AI 正在深度分析题目内容...',
-            '💡 正在生成详细的分析报告...',
-            '⚡ 即将完成，请稍候片刻...',
-            '🎉 马上就好，感谢您的耐心等待！'
-        ];
-
-        let currentTipIndex = 0;
-
-        // Upload area interactions
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const processBtn = document.getElementById('processBtn');
-
-        uploadArea.addEventListener('click', () => fileInput.click());
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileSelect(files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-
-        function handleFileSelect(file) {
-            // Check file type
-            if (!file.name.toLowerCase().endsWith('.pdf')) {
-                showMessage('只支持 PDF 格式文件', 'error');
-                return;
-            }
-
-            // Check file size (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                showMessage('文件大小超过 10MB 限制', 'error');
-                return;
-            }
-
-            selectedFile = file;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatFileSize(file.size);
-            document.getElementById('fileInfo').classList.remove('hidden');
-            processBtn.disabled = false;
-
-            showMessage('文件已选择，请配置 API 密钥后点击"开始处理"', 'info');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-        }
-
-        processBtn.addEventListener('click', async () => {
-            const apiKey = document.getElementById('apiKey').value.trim();
-
-            if (!apiKey) {
-                showMessage('请输入 API 密钥', 'error');
-                return;
-            }
-
-            if (!selectedFile) {
-                showMessage('请先选择 PDF 文件', 'error');
-                return;
-            }
-
-            await processFile();
-        });
-
-        async function processFile() {
-            showLoading();
-            startLoadingTips();
-            document.getElementById('resultsSection').classList.add('hidden');
-
-            try {
-                // Extract text from PDF
-                updateLoadingTip(0);
-                const pdfText = await extractTextFromPDF(selectedFile);
-
-                if (!pdfText.trim()) {
-                    throw new Error('PDF 文件中没有文本内容');
-                }
-
-                // Convert to LaTeX
-                updateLoadingTip(2);
-                latexCode = await convertToLatex(pdfText);
-
-                // Analyze questions
-                updateLoadingTip(4);
-                analysisResults = await analyzeQuestions(pdfText);
-
-                // Display results
-                stopLoadingTips();
-                hideLoading();
-                displayResults();
-                showMessage(`处理成功！找到 ${analysisResults.length} 道题目`, 'success');
-
-            } catch (error) {
-                stopLoadingTips();
-                hideLoading();
-                showMessage('处理失败：' + error.message, 'error');
-                console.error(error);
-            }
-        }
-
-        function startLoadingTips() {
-            currentTipIndex = 0;
-            updateLoadingTip(0);
-
-            // Change tip every 5 seconds
-            loadingInterval = setInterval(() => {
-                currentTipIndex = (currentTipIndex + 1) % loadingTips.length;
-                updateLoadingTip(currentTipIndex);
-            }, 5000);
-        }
-
-        function updateLoadingTip(index) {
-            const tipsElement = document.getElementById('loadingTips');
-            tipsElement.style.animation = 'none';
-            setTimeout(() => {
-                tipsElement.textContent = loadingTips[index];
-                tipsElement.style.animation = 'fadeIn 0.5s';
-            }, 10);
-        }
-
-        function stopLoadingTips() {
-            if (loadingInterval) {
-                clearInterval(loadingInterval);
-                loadingInterval = null;
-            }
-        }
-
-        async function extractTextFromPDF(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-
-            let fullText = '';
-
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n\n';
-            }
-
-            return fullText;
-        }
-
-        async function convertToLatex(pdfText) {
-            const apiProvider = document.getElementById('apiProvider').value;
-            const apiKey = document.getElementById('apiKey').value;
-
-            const prompt = `请将以下文档内容转换为LaTeX格式。
-
-文档内容：
-${pdfText}
-
-要求：
-1. 生成完整的LaTeX文档，包括文档类和必要的包
-2. 保持原有的结构和格式
-3. 题目编号要清晰标记（使用\\section*或明确的编号）
-4. 数学公式使用LaTeX数学环境
-5. 直接返回LaTeX代码，不要添加额外说明
-
-请生成LaTeX代码：`;
-
-            const response = await callAIAPI(apiProvider, apiKey, prompt, 4000);
-
-            // Clean up response
-            let latex = response.trim();
-            if (latex.includes('```latex')) {
-                latex = latex.split('```latex')[1].split('```')[0].trim();
-            } else if (latex.includes('```')) {
-                latex = latex.split('```')[1].split('```')[0].trim();
-            }
-
-            return latex;
-        }
-
-        // 识别文档中的所有题目编号
-        async function identifyQuestions(pdfText) {
-            const apiProvider = document.getElementById('apiProvider').value;
-            const apiKey = document.getElementById('apiKey').value;
-
-            const prompt = `请识别以下文档中所有的大题编号，忽略小题。
-
-文档内容：
-${pdfText}
-
-要求：
-1. 只识别大题编号（如：1. 2. 3. 或 一、二、三、等）
-2. 忽略小题编号（如：(1) (2) (a) (b) 等）
-3. 返回所有找到的大题编号
-
-返回JSON格式：
-{
-    "question_numbers": ["1", "2", "3", "4", "5"]
-}
-
-请直接返回JSON，不要包含其他说明文字。`;
-
-            const response = await callAIAPI(apiProvider, apiKey, prompt, 1000);
-
-            // Parse JSON
-            let jsonStr = response.trim();
-            if (jsonStr.includes('```json')) {
-                jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
-            } else if (jsonStr.includes('```')) {
-                jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
-            }
-
-            const data = JSON.parse(jsonStr);
-            return data.question_numbers || [];
-        }
-
-        // 分批分析题目（每批最多5个题目）
-        async function analyzeQuestionsBatch(pdfText, questionNumbers) {
-            const apiProvider = document.getElementById('apiProvider').value;
-            const apiKey = document.getElementById('apiKey').value;
-
-            const numbersStr = questionNumbers.join('、');
-            const prompt = `请分析以下文档中编号为【${numbersStr}】的题目，仅对这些大题进行分析。
-
-文档内容：
-${pdfText}
-
-要求：
-1. 只分析编号为【${numbersStr}】的大题
-2. 忽略小题（如：(1) (2) (a) (b) 等）
-3. 对每道大题评估：
-   - difficulty: 难度评分（0-5分，0最简单，5最难，保留1位小数）
-   - keywords: 恰好5个知识点标签（中文）
-
-难度评分标准：
-- 0-1分：基础概念，直接应用
-- 1-2分：简单应用，需要理解基本概念
-- 2-3分：中等难度，需要综合运用
-- 3-4分：较难，需要深入分析
-- 4-5分：非常难，需要创新思维
-
-返回JSON格式：
-{
-    "questions": [
-        {
-            "question_number": "1",
-            "difficulty": 2.5,
-            "keywords": ["知识点1", "知识点2", "知识点3", "知识点4", "知识点5"]
-        }
-    ]
-}
-
-请直接返回JSON，不要包含其他说明文字。`;
-
-            const response = await callAIAPI(apiProvider, apiKey, prompt, 2000);
-
-            // Parse JSON
-            let jsonStr = response.trim();
-            if (jsonStr.includes('```json')) {
-                jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
-            } else if (jsonStr.includes('```')) {
-                jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
-            }
-
-            const data = JSON.parse(jsonStr);
-            const questions = data.questions || [];
-
-            // Normalize data
-            return questions.map(q => {
-                let difficulty = parseFloat(q.difficulty || 2.5);
-                difficulty = Math.max(0, Math.min(5, difficulty));
-                difficulty = Math.round(difficulty * 10) / 10;
-
-                let keywords = q.keywords || [];
-                if (typeof keywords === 'string') keywords = [keywords];
-                while (keywords.length < 5) keywords.push('通用');
-                keywords = keywords.slice(0, 5);
-
-                return {
-                    question_number: String(q.question_number || ''),
-                    difficulty: difficulty,
-                    keywords: keywords
-                };
-            });
-        }
-
-        // 分批处理所有题目
-        async function analyzeQuestions(pdfText) {
-            // 第一步：识别所有题目编号
-            updateLoadingTip(4); // "正在识别大题和小题..."
-            const allQuestionNumbers = await identifyQuestions(pdfText);
-
-            // 检查题目数量
-            if (allQuestionNumbers.length === 0) {
-                throw new Error('未能识别到任何题目，请检查PDF格式');
-            }
-
-            if (allQuestionNumbers.length > 50) {
-                throw new Error('错误，题目过多，超过程序计算极限（最多支持50道题目）');
-            }
-
-            // 第二步：分批分析题目（每批5个）
-            const batchSize = 5;
-            const allResults = [];
-            const totalBatches = Math.ceil(allQuestionNumbers.length / batchSize);
-
-            for (let i = 0; i < totalBatches; i++) {
-                const start = i * batchSize;
-                const end = Math.min(start + batchSize, allQuestionNumbers.length);
-                const batchNumbers = allQuestionNumbers.slice(start, end);
-
-                // 更新加载提示
-                const tipsElement = document.getElementById('loadingTips');
-                tipsElement.textContent = `📊 正在分析题目 ${start + 1}-${end}（共 ${allQuestionNumbers.length} 道）...`;
-
-                // 分析当前批次
-                const batchResults = await analyzeQuestionsBatch(pdfText, batchNumbers);
-                allResults.push(...batchResults);
-
-                // 如果不是最后一批，短暂延迟避免API限流
-                if (i < totalBatches - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-
-            return allResults;
-        }
-
-        async function callAIAPI(provider, apiKey, prompt, maxTokens) {
-            const apiBase = provider === 'deepseek'
-                ? 'https://api.deepseek.com/v1/chat/completions'
-                : 'https://api.openai.com/v1/chat/completions';
-
-            const model = provider === 'deepseek' ? 'deepseek-chat' : 'gpt-3.5-turbo';
-
-            const response = await fetch(apiBase, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: '你是一个专业的教育专家，擅长LaTeX排版和题目分析。'
-                        },
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: maxTokens
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error?.message || 'API 调用失败');
-            }
-
-            const data = await response.json();
-            return data.choices[0].message.content.trim();
-        }
-
-        function displayResults() {
-            document.getElementById('resultsSection').classList.remove('hidden');
-
-            // Calculate statistics
-            const totalQuestions = analysisResults.length;
-            const avgDifficulty = totalQuestions > 0
-                ? (analysisResults.reduce((sum, q) => sum + q.difficulty, 0) / totalQuestions).toFixed(1)
-                : 0.0;
-            const hardest = totalQuestions > 0
-                ? analysisResults.reduce((max, q) => q.difficulty > max.difficulty ? q : max, analysisResults[0])
-                : null;
-
-            // Update statistics
-            document.getElementById('totalQuestions').textContent = totalQuestions;
-            document.getElementById('avgDifficulty').textContent = avgDifficulty;
-            document.getElementById('hardestQuestion').textContent = hardest ? hardest.question_number : '-';
-
-            // Display LaTeX
-            document.getElementById('questionCount').textContent = totalQuestions + ' 道';
-            document.getElementById('resultCount').textContent = totalQuestions;
-            document.getElementById('latexPreview').textContent = latexCode;
-
-            // Display ALL question analysis (no limit)
-            const container = document.getElementById('resultsContainer');
-            container.innerHTML = '';
-
-            analysisResults.forEach((result, index) => {
-                const difficultyPercent = (result.difficulty / 5.0) * 100;
-
-                const keywords = result.keywords.map(k =>
-                    `<span class="keyword-tag">${k}</span>`
-                ).join('');
-
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.innerHTML = `
-                    <div class="question-number">题目 ${result.question_number}</div>
-                    <div class="difficulty">
-                        <span class="difficulty-label">难度：</span>
-                        <span class="difficulty-value">${result.difficulty}</span>
-                        <div class="difficulty-bar">
-                            <div class="difficulty-fill" style="width: ${difficultyPercent}%"></div>
-                        </div>
-                    </div>
-                    <div class="keywords">
-                        <strong>知识点：</strong><br>
-                        ${keywords}
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-
-            // Scroll to results
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Download LaTeX
-        document.getElementById('downloadLatex').addEventListener('click', () => {
-            downloadFile(latexCode, 'output.tex', 'text/plain');
-        });
-
-        // Copy LaTeX
-        document.getElementById('copyLatex').addEventListener('click', () => {
-            navigator.clipboard.writeText(latexCode).then(() => {
-                showMessage('LaTeX 代码已复制到剪贴板', 'success');
-            });
-        });
-
-        // Download Excel
-        document.getElementById('downloadExcel').addEventListener('click', () => {
-            exportToExcel();
-        });
-
-        // Download JSON
-        document.getElementById('downloadJSON').addEventListener('click', () => {
-            const json = JSON.stringify(analysisResults, null, 2);
-            downloadFile(json, 'analysis_results.json', 'application/json');
-        });
-
-        function exportToExcel() {
-            // Prepare data for Excel
-            const excelData = analysisResults.map((result, index) => {
-                return {
-                    '题号': result.question_number,
-                    '难度评分': result.difficulty,
-                    '知识点1': result.keywords[0] || '',
-                    '知识点2': result.keywords[1] || '',
-                    '知识点3': result.keywords[2] || '',
-                    '知识点4': result.keywords[3] || '',
-                    '知识点5': result.keywords[4] || ''
-                };
-            });
-
-            // Create worksheet
-            const ws = XLSX.utils.json_to_sheet(excelData);
-
-            // Set column widths
-            ws['!cols'] = [
-                { wch: 10 },  // 题号
-                { wch: 12 },  // 难度评分
-                { wch: 15 },  // 知识点1
-                { wch: 15 },  // 知识点2
-                { wch: 15 },  // 知识点3
-                { wch: 15 },  // 知识点4
-                { wch: 15 }   // 知识点5
-            ];
-
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, '题目分析');
-
-            // Generate filename with timestamp
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            const filename = `题目分析结果_${timestamp}.xlsx`;
-
-            // Download
-            XLSX.writeFile(wb, filename);
-
-            showMessage('Excel 文件已下载', 'success');
-        }
-
-        function downloadFile(content, filename, mimeType) {
-            const blob = new Blob([content], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function showLoading() {
-            document.getElementById('loading').classList.add('active');
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.remove('active');
-        }
-
-        function showMessage(message, type) {
-            const messagesDiv = document.getElementById('messages');
-            let alertClass = 'alert-info';
-
-            if (type === 'error') {
-                alertClass = 'alert-error';
-            } else if (type === 'success') {
-                alertClass = 'alert-success';
-            }
-
-            const alertHtml = `<div class="alert ${alertClass}">${message}</div>`;
-            messagesDiv.innerHTML = alertHtml;
-
-            setTimeout(() => {
-                messagesDiv.innerHTML = '';
-            }, 5000);
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

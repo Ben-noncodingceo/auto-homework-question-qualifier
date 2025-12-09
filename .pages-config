@@ -1,0 +1,5 @@
+# Cloudflare Pages Configuration
+# This file is automatically detected by Cloudflare Pages
+
+# No build command needed - this is a static site
+# Build output directory: public
