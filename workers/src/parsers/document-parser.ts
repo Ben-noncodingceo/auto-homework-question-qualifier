@@ -63,40 +63,167 @@ export class DocumentParser {
   }
 
   /**
-   * Extract text from PDF buffer (basic implementation)
-   * This extracts text between stream markers
+   * Extract text from PDF buffer (enhanced implementation)
+   * This extracts text from various PDF operators and encodings
    */
   private static extractTextFromPDFBuffer(buffer: Uint8Array): string {
-    const decoder = new TextDecoder('utf-8', { fatal: false });
-    const content = decoder.decode(buffer);
+    // Try multiple encodings to handle different PDF formats
+    const encodings = ['utf-8', 'latin1', 'windows-1252'];
+    let bestResult = '';
+    let maxTextLength = 0;
 
+    for (const encoding of encodings) {
+      try {
+        const decoder = new TextDecoder(encoding, { fatal: false });
+        const content = decoder.decode(buffer);
+        const extractedText = this.extractTextWithMultipleStrategies(content);
+
+        if (extractedText.length > maxTextLength) {
+          maxTextLength = extractedText.length;
+          bestResult = extractedText;
+        }
+      } catch (e) {
+        // Continue with next encoding
+        continue;
+      }
+    }
+
+    return bestResult;
+  }
+
+  /**
+   * Extract text using multiple PDF parsing strategies
+   */
+  private static extractTextWithMultipleStrategies(content: string): string {
     const texts: string[] = [];
 
-    // Look for text between BT (Begin Text) and ET (End Text) markers
+    // Strategy 1: Extract from BT/ET blocks with Tj operator
+    const tjTexts = this.extractWithTjOperator(content);
+    texts.push(...tjTexts);
+
+    // Strategy 2: Extract from TJ array operator
+    const tjArrayTexts = this.extractWithTJOperator(content);
+    texts.push(...tjArrayTexts);
+
+    // Strategy 3: Extract from stream objects
+    const streamTexts = this.extractFromStreams(content);
+    texts.push(...streamTexts);
+
+    // Strategy 4: Extract text in parentheses (fallback)
+    const parenTexts = this.extractParenthesisText(content);
+    texts.push(...parenTexts);
+
+    // Remove duplicates and join
+    const uniqueTexts = [...new Set(texts.filter(t => t.trim().length > 0))];
+    return uniqueTexts.join(' ').trim();
+  }
+
+  /**
+   * Extract text using Tj operator
+   */
+  private static extractWithTjOperator(content: string): string[] {
+    const texts: string[] = [];
     const btPattern = /BT\s+(.*?)\s+ET/gs;
     const matches = content.matchAll(btPattern);
 
     for (const match of matches) {
       const textContent = match[1];
-      // Extract text from Tj or TJ operators
       const tjPattern = /\((.*?)\)\s*Tj/g;
       const tjMatches = textContent.matchAll(tjPattern);
 
       for (const tjMatch of tjMatches) {
-        const text = tjMatch[1]
-          .replace(/\\n/g, '\n')
-          .replace(/\\r/g, '\r')
-          .replace(/\\t/g, '\t')
-          .replace(/\\\\/g, '\\')
-          .replace(/\\([()])/g, '$1');
-
+        const text = this.decodeTextString(tjMatch[1]);
         if (text.trim()) {
           texts.push(text);
         }
       }
     }
 
-    return texts.join(' ').trim();
+    return texts;
+  }
+
+  /**
+   * Extract text using TJ (array) operator
+   */
+  private static extractWithTJOperator(content: string): string[] {
+    const texts: string[] = [];
+    const tjPattern = /\[(.*?)\]\s*TJ/gs;
+    const matches = content.matchAll(tjPattern);
+
+    for (const match of matches) {
+      const arrayContent = match[1];
+      // Extract strings from array
+      const stringPattern = /\((.*?)\)/g;
+      const stringMatches = arrayContent.matchAll(stringPattern);
+
+      for (const stringMatch of stringMatches) {
+        const text = this.decodeTextString(stringMatch[1]);
+        if (text.trim()) {
+          texts.push(text);
+        }
+      }
+    }
+
+    return texts;
+  }
+
+  /**
+   * Extract text from PDF stream objects
+   */
+  private static extractFromStreams(content: string): string[] {
+    const texts: string[] = [];
+    const streamPattern = /stream\s+(.*?)\s+endstream/gs;
+    const matches = content.matchAll(streamPattern);
+
+    for (const match of matches) {
+      const streamContent = match[1];
+      // Look for readable text in streams
+      const readablePattern = /[\u0020-\u007E\u4e00-\u9fa5]{3,}/g;
+      const readableMatches = streamContent.matchAll(readablePattern);
+
+      for (const readableMatch of readableMatches) {
+        const text = readableMatch[0].trim();
+        if (text.length > 3) {
+          texts.push(text);
+        }
+      }
+    }
+
+    return texts;
+  }
+
+  /**
+   * Extract all text in parentheses (fallback strategy)
+   */
+  private static extractParenthesisText(content: string): string[] {
+    const texts: string[] = [];
+    const parenPattern = /\(([^)]{3,})\)/g;
+    const matches = content.matchAll(parenPattern);
+
+    for (const match of matches) {
+      const text = this.decodeTextString(match[1]);
+      // Only include text with actual readable content
+      if (text.trim().length > 2 && /[\u0020-\u007E\u4e00-\u9fa5]/.test(text)) {
+        texts.push(text);
+      }
+    }
+
+    return texts;
+  }
+
+  /**
+   * Decode PDF text string with escape sequences
+   */
+  private static decodeTextString(text: string): string {
+    return text
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\r')
+      .replace(/\\t/g, '\t')
+      .replace(/\\\\/g, '\\')
+      .replace(/\\([()])/g, '$1')
+      .replace(/\\([0-7]{3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)))
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .trim();
   }
 
   /**

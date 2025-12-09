@@ -69,7 +69,7 @@ export interface Env {
 export const AVAILABLE_MODELS = {
   deepseek: [
     { id: 'deepseek-chat', name: 'DeepSeek Chat' },
-    { id: 'deepseek-coder', name: 'DeepSeek Coder' }
+    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' }
   ],
   doubao: [
     { id: 'doubao-pro-32k', name: 'Doubao Pro 32K' },
